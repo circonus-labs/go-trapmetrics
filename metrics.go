@@ -1,0 +1,219 @@
+// Copyright (c) 2021 Circonus, Inc. <support@circonus.com>
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+//
+
+package trapmetrics
+
+import (
+	"fmt"
+	"hash/fnv"
+	"strings"
+	"time"
+
+	"github.com/openhistogram/circonusllhist"
+)
+
+const (
+	// mytpes (generic)
+	mtNone                = "none" //nolint:deadcode,varcheck // metric will get dropped
+	mtCounter             = "counter"
+	mtGauge               = "gauge"
+	mtHistogram           = "histogram"
+	mtCumulativeHistogram = "cumulative_histogram"
+	mtText                = "text"
+	// rtypes (reconnoiter)
+	rtInt32               = "i"
+	rtUint32              = "I"
+	rtInt64               = "l"
+	rtUint64              = "L"
+	rtFloat64             = "n"
+	rtHistogram           = "h"
+	rtCumulativeHistogram = "H"
+	rtString              = "s"
+
+	// NOTE: max tags and metric name len are enforced here so that
+	// details on which metric(s) can be logged. Otherwise, any
+	// metric(s) exceeding the limits are rejected by the broker
+	// without details on which metric(s) caused the error(s) and
+	// what the error(s) actually were, in addition, the broker
+	// rejects all metrics sent with the offending metric(s).
+
+	// MaxTags reconnoiter will accept in stream tagged metric name
+	maxTags = 256 // sync w/MAX_TAGS https://github.com/circonus-labs/reconnoiter/blob/master/src/noit_metric.h#L41
+
+	// MaxMetricNameLen reconnoiter will accept (name+stream tags)
+	maxMetricNameLen = 4096 // sync w/MAX_METRIC_TAGGED_NAME https://github.com/circonus-labs/reconnoiter/blob/master/src/noit_metric.h#L40
+)
+
+type Samples map[uint64]interface{}
+
+type Metrics map[uint64]*Metric
+
+type Metric struct {
+	Samples Samples
+	Name    string
+	Mtype   string // set by interface methods
+	Rtype   string // set by interface methods
+	Tags    Tags
+	ID      uint64
+}
+
+func (m *Metric) String() string {
+	return fmt.Sprintf("id: %d, name: %s, mtype: %s, rtype: %s, tags: %s, samples: %v",
+		m.ID,
+		m.Name,
+		m.Mtype,
+		m.Rtype,
+		m.Tags.String(),
+		m.Samples)
+}
+
+func (tm *TrapMetrics) newMetric(metricName, metricType string, tags Tags) (*Metric, error) {
+	if metricName == "" {
+		return nil, fmt.Errorf("invalid metric name (empty)")
+	}
+	if metricType == "" {
+		return nil, fmt.Errorf("invalid metric type (empty)")
+	}
+	if len(tags) > maxTags {
+		return nil, fmt.Errorf("invalid tags (%d > %d)", len(tags), maxTags)
+	}
+
+	id, err := generateMetricID(metricName, metricType, tags)
+	if err != nil {
+		return nil, err
+	}
+
+	m := &Metric{
+		ID:      id,
+		Name:    metricName,
+		Tags:    tags,
+		Mtype:   metricType,
+		Samples: make(Samples),
+	}
+
+	return m, nil
+}
+
+func generateMetricID(metricName, metricType string, tags Tags) (uint64, error) {
+	h := fnv.New64a()
+	_, err := h.Write([]byte(fmt.Sprintf("%s|%s|%s", metricName, metricType, tags.String())))
+	if err != nil {
+		return 0, fmt.Errorf("hashing name: %w", err)
+	}
+	return h.Sum64(), nil
+}
+
+// generateSampleKey returns a time as a timestamp
+// in milliseconds the broker can digest, uses
+// current time if ts is nil
+func generateSampleKey(ts *time.Time) uint64 {
+	if ts == nil {
+		return 0
+	}
+	return uint64(ts.UTC().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond)))
+}
+
+func addMetricToBuffer(buf *strings.Builder, first *bool, metricName, metricType string, val interface{}, ts uint64) error {
+	value := val
+
+	if metricType == "s" {
+		// NOTE: escape embedded quotes and add the string quotes
+		value = fmt.Sprintf(`"%v"`, strings.ReplaceAll(val.(string), `"`, `\"`))
+	}
+
+	if metricType == "h" || metricType == "H" {
+		// NOTE: need to add the string quotes
+		value = fmt.Sprintf(`"%v"`, val)
+	}
+
+	// fastest way to get through this
+	// otherwise manipulating a larger
+	// after to truncate the last comma
+	// can take several milliseconds...
+	comma := ","
+	if *first {
+		comma = ""
+		*first = false
+	}
+
+	_, err := buf.WriteString(fmt.Sprintf(
+		`%s%q:{"_type":"%s","_ts":%d,"_value":%v}`,
+		comma,
+		metricName,
+		metricType,
+		ts,
+		value))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (tm *TrapMetrics) jsonMetrics() (*strings.Builder, error) {
+	tm.metricsmu.Lock()
+	if len(tm.metrics) == 0 {
+		tm.metricsmu.Unlock()
+		return nil, nil
+	}
+
+	var buf strings.Builder
+	buf.WriteString("{")
+
+	var hb strings.Builder
+
+	flushTime := time.Now()
+	first := true
+	for _, m := range tm.metrics {
+		tags := m.Tags
+		if len(tm.globalTags) > 0 {
+			tags = append(tags, tm.globalTags...)
+		}
+		metricName := m.Name + tags.Stream()
+		if len(metricName) > maxMetricNameLen {
+			tm.Log.Warnf("metric name exceeds max len (%s)", metricName)
+			continue
+		}
+		brokerType := m.Rtype
+		if brokerType == "" {
+			tm.Log.Warnf("unknown broker metric type: %s -> %#v", metricName, *m)
+			continue
+		}
+
+		switch m.Mtype {
+		case mtGauge, mtText:
+			for sampleKey, sampleValue := range m.Samples {
+				_ = addMetricToBuffer(&buf, &first, metricName, brokerType, sampleValue, sampleKey)
+			}
+		case mtCounter, mtCumulativeHistogram, mtHistogram:
+			sampleKey := generateSampleKey(&flushTime)
+			if m.Mtype == mtCounter {
+				_ = addMetricToBuffer(&buf, &first, metricName, brokerType, m.Samples[0], sampleKey)
+			} else {
+				hb.Reset()
+				if err := m.Samples[0].(*circonusllhist.Histogram).SerializeB64(&hb); err != nil {
+					tm.Log.Warnf("serializing histogram (%s %s): %s", m.Name, m.Tags, err)
+					continue
+				}
+				_ = addMetricToBuffer(&buf, &first, metricName, brokerType, hb.String(), sampleKey)
+			}
+		}
+	}
+
+	if buf.Len() <= 1 {
+		ml := len(tm.metrics)
+		tm.metrics = make(Metrics)
+		tm.metricsmu.Unlock()
+		return nil, fmt.Errorf("no valid metrics found (%d)", ml)
+	}
+
+	tm.metrics = make(Metrics)
+	tm.metricsmu.Unlock()
+
+	buf.WriteString("}")
+
+	return &buf, nil
+}
