@@ -19,7 +19,7 @@ type Tag struct {
 
 type Tags []Tag
 
-// String returns a string representation of tag
+// String returns a string representation of tag.
 func (t *Tag) String() string {
 	if t.Category == "" {
 		return ""
@@ -28,7 +28,7 @@ func (t *Tag) String() string {
 	return normalizeCategory(t.Category) + ":" + t.Value
 }
 
-// Encode returns a base64 encoded tag
+// Encode returns a base64 encoded tag.
 func (t *Tag) Encode() string {
 	if t.Category == "" {
 		return ""
@@ -54,7 +54,7 @@ func normalizeCategory(c string) string {
 	return strings.ToLower(strings.ReplaceAll(c, " ", "_"))
 }
 
-// String returns a sorted, string list representation of tags
+// String returns a sorted, string list representation of tags.
 func (tt *Tags) String() string {
 	sort.SliceStable(*tt, func(i, j int) bool {
 		return (*tt)[i].String() < (*tt)[j].String()
@@ -71,7 +71,7 @@ func (tt *Tags) String() string {
 	return strings.Join(tags, ",")
 }
 
-// Stream returns a base64 encoded string list representation of tags
+// Encode returns a base64 encoded string list representation of tags.
 func (tt *Tags) Encode() string {
 	sort.SliceStable(*tt, func(i, j int) bool {
 		return (*tt)[i].String() < (*tt)[j].String()
@@ -88,7 +88,7 @@ func (tt *Tags) Encode() string {
 	return strings.Join(tags, ",")
 }
 
-// Stream returns a streamtag encoded string list representation of tags
+// Stream returns a streamtag encoded string list representation of tags.
 func (tt *Tags) Stream() string {
 	t := tt.Encode()
 	if t == "" {

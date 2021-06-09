@@ -21,7 +21,7 @@ const (
 	defaultBufferSize = uint(32768)
 )
 
-// Trap defines the interface for for submitting metrics
+// Trap defines the interface for for submitting metrics.
 type Trap interface {
 	SendMetrics(ctx context.Context, metrics *strings.Builder) (*trapcheck.TrapResult, error)
 }
@@ -73,7 +73,7 @@ func New(cfg *Config) (*TrapMetrics, error) {
 
 // JSONMetrics returns the current metrics in JSON format or an error - to be used
 // when handling submission of metrics externally (e.g. aggregating multiple sets
-// of metrics from different trapmetrics containers)
+// of metrics from different trapmetrics containers).
 func (tm *TrapMetrics) JSONMetrics() ([]byte, error) {
 	m, err := tm.jsonMetrics()
 	if err != nil {
@@ -95,7 +95,7 @@ type Result struct {
 	BytesSent       int
 }
 
-// Flush sends metrics to the configured trap check, returns result or an error
+// Flush sends metrics to the configured trap check, returns result or an error.
 func (tm *TrapMetrics) Flush(ctx context.Context) (*Result, error) {
 	if tm.trap == nil {
 		return nil, fmt.Errorf("no trap check configured")

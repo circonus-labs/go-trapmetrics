@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// TextSet sets a sample with a given timestamp for a text to the passed value
+// TextSet sets a sample with a given timestamp for a text to the passed value.
 func (tm *TrapMetrics) TextSet(name string, tags Tags, val string, ts *time.Time) error {
 	mt := mtText
 
@@ -43,7 +43,7 @@ func (tm *TrapMetrics) TextSet(name string, tags Tags, val string, ts *time.Time
 	return nil
 }
 
-// TextFetch will return the metric identified by name and tags
+// TextFetch will return the metric identified by name and tags.
 func (tm *TrapMetrics) TextFetch(name string, tags Tags) (*Metric, error) {
 	metricID, err := generateMetricID(name, mtText, tags)
 	if err != nil {

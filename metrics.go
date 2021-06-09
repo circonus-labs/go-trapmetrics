@@ -15,14 +15,14 @@ import (
 )
 
 const (
-	// mytpes (generic)
+	// mytpes (generic).
 	mtNone                = "none" //nolint:deadcode,varcheck // metric will get dropped
 	mtCounter             = "counter"
 	mtGauge               = "gauge"
 	mtHistogram           = "histogram"
 	mtCumulativeHistogram = "cumulative_histogram"
 	mtText                = "text"
-	// rtypes (reconnoiter)
+	// rtypes (reconnoiter).
 	rtInt32               = "i"
 	rtUint32              = "I"
 	rtInt64               = "l"
@@ -39,10 +39,10 @@ const (
 	// what the error(s) actually were, in addition, the broker
 	// rejects all metrics sent with the offending metric(s).
 
-	// MaxTags reconnoiter will accept in stream tagged metric name
+	// MaxTags reconnoiter will accept in stream tagged metric name.
 	maxTags = 256 // sync w/MAX_TAGS https://github.com/circonus-labs/reconnoiter/blob/master/src/noit_metric.h#L41
 
-	// MaxMetricNameLen reconnoiter will accept (name+stream tags)
+	// MaxMetricNameLen reconnoiter will accept (name+stream tags).
 	maxMetricNameLen = 4096 // sync w/MAX_METRIC_TAGGED_NAME https://github.com/circonus-labs/reconnoiter/blob/master/src/noit_metric.h#L40
 )
 
@@ -107,7 +107,7 @@ func generateMetricID(metricName, metricType string, tags Tags) (uint64, error) 
 
 // generateSampleKey returns a time as a timestamp
 // in milliseconds the broker can digest, uses
-// current time if ts is nil
+// current time if ts is nil.
 func generateSampleKey(ts *time.Time) uint64 {
 	if ts == nil {
 		return 0
@@ -147,7 +147,7 @@ func addMetricToBuffer(buf *strings.Builder, first *bool, metricName, metricType
 		value))
 
 	if err != nil {
-		return err
+		return fmt.Errorf("buf write string: %w", err)
 	}
 
 	return nil

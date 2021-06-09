@@ -14,12 +14,12 @@ import "fmt"
 // Note: histograms don't take timestamps as they already contain multiple samples
 //       when they are flushed and serialized the current timestamp is used.
 
-// CumulativeHistogramRecordCountForValue add count n for value to histogram
+// CumulativeHistogramRecordCountForValue add count n for value to histogram.
 func (tm *TrapMetrics) CumulativeHistogramRecordCountForValue(name string, tags Tags, count int64, val float64) error {
 	return tm.setCountForValue(name, tags, true, count, val)
 }
 
-// CumulativeHistogramFetch will return the metric identified by name and tags
+// CumulativeHistogramFetch will return the metric identified by name and tags.
 func (tm *TrapMetrics) CumulativeHistogramFetch(name string, tags Tags) (*Metric, error) {
 	metricID, err := generateMetricID(name, mtCumulativeHistogram, tags)
 	if err != nil {

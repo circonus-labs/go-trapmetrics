@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// GaugeSet sets a sample with a given timestamp for a gauge to the passed value
+// GaugeSet sets a sample with a given timestamp for a gauge to the passed value.
 func (tm *TrapMetrics) GaugeSet(name string, tags Tags, val interface{}, ts *time.Time) error {
 	mt := mtGauge
 
@@ -51,7 +51,7 @@ func (tm *TrapMetrics) GaugeSet(name string, tags Tags, val interface{}, ts *tim
 	return nil
 }
 
-// GaugeAdd adds a sample with a given timestamp for a gauge to the passed value
+// GaugeAdd adds a sample with a given timestamp for a gauge to the passed value.
 func (tm *TrapMetrics) GaugeAdd(name string, tags Tags, val interface{}, ts *time.Time) error {
 	mt := mtGauge
 
@@ -146,7 +146,7 @@ func isValidGaugeType(val interface{}) (bool, string) {
 	}
 }
 
-// GaugeFetch will return the metric identified by name and tags
+// GaugeFetch will return the metric identified by name and tags.
 func (tm *TrapMetrics) GaugeFetch(name string, tags Tags) (*Metric, error) {
 	metricID, err := generateMetricID(name, mtGauge, tags)
 	if err != nil {
