@@ -1,5 +1,7 @@
 # Package `go-trapmetrics`
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/circonus-labs/go-trapmetrics.svg)](https://pkg.go.dev/github.com/circonus-labs/go-trapmetrics)
+
 A simplified, streamlined, and updated replacement for `circonus-gometrics`. Covers basic functionality for collecting and submitting
 metrics to Circonus.
 
