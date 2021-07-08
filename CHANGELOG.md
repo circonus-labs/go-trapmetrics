@@ -1,6 +1,7 @@
 # v0.0.5
 
 * upd: dep go-trapcheck
+* fix: handle zero metrics to send correctly
 
 # v0.0.4
 
@@ -9,7 +10,7 @@
 # v0.0.3
 
 * build(deps): bump github.com/circonus-labs/go-trapcheck
- 
+
 # v0.0.2
 
 * build(deps): bump github.com/circonus-labs/go-trapcheck
