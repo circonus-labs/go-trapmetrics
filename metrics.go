@@ -154,13 +154,14 @@ func addMetricToBuffer(buf *strings.Builder, first *bool, metricName, metricType
 }
 
 func (tm *TrapMetrics) jsonMetrics() (*strings.Builder, error) {
+	var buf strings.Builder
+
 	tm.metricsmu.Lock()
 	if len(tm.metrics) == 0 {
 		tm.metricsmu.Unlock()
-		return nil, nil
+		return &buf, nil
 	}
 
-	var buf strings.Builder
 	buf.WriteString("{")
 
 	var hb strings.Builder

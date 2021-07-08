@@ -106,7 +106,7 @@ func (tm *TrapMetrics) Flush(ctx context.Context) (*Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("packaging metrics for submission: %w", err)
 	}
-	if data.Len() == 0 {
+	if data == nil || data.Len() == 0 {
 		return &Result{Error: "no metrics to send"}, nil
 	}
 	result := &Result{
