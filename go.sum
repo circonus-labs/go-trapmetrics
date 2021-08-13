@@ -1,7 +1,7 @@
 github.com/circonus-labs/go-apiclient v0.7.15 h1:r9sUdc+EDM0tL6Z6u03dac8fxYvlz1kPhxlNwkoIoqM=
 github.com/circonus-labs/go-apiclient v0.7.15/go.mod h1:RFgkvdYEkimzgu3V2vVYlS1bitjOz1SF6uw109ieNeY=
-github.com/circonus-labs/go-trapcheck v0.0.5 h1:UDFzp5q+Emp9OmACWBT9nVZm0mAdjMfFoHgJmbtI1Wo=
-github.com/circonus-labs/go-trapcheck v0.0.5/go.mod h1:CVuyNYI9UsJhXTJJojLeHaSryo47XWNJe94YjxsXEv0=
+github.com/circonus-labs/go-trapcheck v0.0.6 h1:emcbscT8xtSGZDz0X917bES7DMLf/3xshDQ/N8h8v6I=
+github.com/circonus-labs/go-trapcheck v0.0.6/go.mod h1:CVuyNYI9UsJhXTJJojLeHaSryo47XWNJe94YjxsXEv0=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/uuid v1.2.0 h1:qJYtXnJRWmpe7m/3XlyhrsLrEURqHRM2kxzoxXqyUDs=
