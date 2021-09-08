@@ -1,3 +1,15 @@
+# v0.0.7
+
+* upd: go-trapcheck v0.0.7
+* upd: use bytes.Buffer
+* add: FlushRawJSON to send pre-formatted metrics
+* add: FlushWithBuffer to pass in a buffer from a pool
+* upd: use bytes.Buffer for metrics
+
+# v0.0.6
+
+* upd: dep go-trapcheck
+
 # v0.0.5
 
 * upd: dep go-trapcheck
