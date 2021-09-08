@@ -6,8 +6,10 @@
 package trapmetrics
 
 import (
+	"bytes"
 	"fmt"
 	"hash/fnv"
+	"io"
 	"strings"
 	"time"
 
@@ -115,56 +117,56 @@ func generateSampleKey(ts *time.Time) uint64 {
 	return uint64(ts.UTC().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond)))
 }
 
-func addMetricToBuffer(buf *strings.Builder, first *bool, metricName, metricType string, val interface{}, ts uint64) error {
-	value := val
+// func addMetricToBuffer(buf *bytes.Buffer, first *bool, metricName, metricType string, val interface{}, ts uint64) error {
+// 	value := val
 
-	if metricType == "s" {
-		// NOTE: escape embedded quotes and add the string quotes
-		value = fmt.Sprintf(`"%v"`, strings.ReplaceAll(val.(string), `"`, `\"`))
-	}
+// 	if metricType == "s" {
+// 		// NOTE: escape embedded quotes and add the string quotes
+// 		value = fmt.Sprintf(`"%v"`, strings.ReplaceAll(val.(string), `"`, `\"`))
+// 	}
 
-	if metricType == "h" || metricType == "H" {
-		// NOTE: need to add the string quotes
-		value = fmt.Sprintf(`"%v"`, val)
-	}
+// 	if metricType == "h" || metricType == "H" {
+// 		// NOTE: need to add the string quotes
+// 		value = fmt.Sprintf(`"%v"`, val)
+// 	}
 
-	// fastest way to get through this
-	// otherwise manipulating a larger
-	// after to truncate the last comma
-	// can take several milliseconds...
-	comma := ","
-	if *first {
-		comma = ""
-		*first = false
-	}
+// 	// fastest way to get through this
+// 	// otherwise manipulating a larger
+// 	// after to truncate the last comma
+// 	// can take several milliseconds...
+// 	comma := ","
+// 	if *first {
+// 		comma = ""
+// 		*first = false
+// 	}
 
-	_, err := buf.WriteString(fmt.Sprintf(
-		`%s%q:{"_type":"%s","_ts":%d,"_value":%v}`,
-		comma,
-		metricName,
-		metricType,
-		ts,
-		value))
+// 	_, err := buf.WriteString(fmt.Sprintf(
+// 		`%s%q:{"_type":"%s","_ts":%d,"_value":%v}`,
+// 		comma,
+// 		metricName,
+// 		metricType,
+// 		ts,
+// 		value))
 
-	if err != nil {
-		return fmt.Errorf("buf write string: %w", err)
-	}
+// 	if err != nil {
+// 		return fmt.Errorf("buf write string: %w", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func (tm *TrapMetrics) jsonMetrics() (*strings.Builder, error) {
-	var buf strings.Builder
-
+func (tm *TrapMetrics) writeJSONMetrics(w io.Writer) error {
 	tm.metricsmu.Lock()
 	if len(tm.metrics) == 0 {
 		tm.metricsmu.Unlock()
-		return &buf, nil
+		return nil
 	}
 
-	buf.WriteString("{")
+	if _, err := w.Write([]byte("{")); err != nil {
+		return fmt.Errorf("write {: %w", err)
+	}
 
-	var hb strings.Builder
+	var hb bytes.Buffer
 
 	flushTime := time.Now()
 	first := true
@@ -187,34 +189,85 @@ func (tm *TrapMetrics) jsonMetrics() (*strings.Builder, error) {
 		switch m.Mtype {
 		case mtGauge, mtText:
 			for sampleKey, sampleValue := range m.Samples {
-				_ = addMetricToBuffer(&buf, &first, metricName, brokerType, sampleValue, sampleKey)
+				_ = writeMetric(w, &first, metricName, brokerType, sampleValue, sampleKey)
 			}
 		case mtCounter, mtCumulativeHistogram, mtHistogram:
 			sampleKey := generateSampleKey(&flushTime)
 			if m.Mtype == mtCounter {
-				_ = addMetricToBuffer(&buf, &first, metricName, brokerType, m.Samples[0], sampleKey)
+				_ = writeMetric(w, &first, metricName, brokerType, m.Samples[0], sampleKey)
 			} else {
 				hb.Reset()
 				if err := m.Samples[0].(*circonusllhist.Histogram).SerializeB64(&hb); err != nil {
 					tm.Log.Warnf("serializing histogram (%s %s): %s", m.Name, m.Tags, err)
 					continue
 				}
-				_ = addMetricToBuffer(&buf, &first, metricName, brokerType, hb.String(), sampleKey)
+				_ = writeMetric(w, &first, metricName, brokerType, hb.String(), sampleKey)
 			}
 		}
 	}
 
-	if buf.Len() <= 1 {
-		ml := len(tm.metrics)
-		tm.metrics = make(Metrics)
-		tm.metricsmu.Unlock()
-		return nil, fmt.Errorf("no valid metrics found (%d)", ml)
+	if _, err := w.Write([]byte("}")); err != nil {
+		return fmt.Errorf("write }: %w", err)
 	}
 
 	tm.metrics = make(Metrics)
 	tm.metricsmu.Unlock()
 
-	buf.WriteString("}")
+	return nil
+}
 
-	return &buf, nil
+func writeMetric(w io.Writer, first *bool, metricName, metricType string, val interface{}, ts uint64) error {
+	value := val
+
+	if metricType == "s" {
+		// NOTE: escape embedded quotes and add the string quotes
+		value = fmt.Sprintf(`"%v"`, strings.ReplaceAll(val.(string), `"`, `\"`))
+	}
+
+	if metricType == "h" || metricType == "H" {
+		// NOTE: need to add the string quotes
+		value = fmt.Sprintf(`"%v"`, val)
+	}
+
+	// fastest way to get through this
+	// otherwise manipulating a larger
+	// after to truncate the last comma
+	// can take several milliseconds...
+	comma := ","
+	if *first {
+		comma = ""
+		*first = false
+	}
+
+	metric := fmt.Sprintf(
+		`%s%q:{"_type":"%s","_ts":%d,"_value":%v}`,
+		comma,
+		metricName,
+		metricType,
+		ts,
+		value)
+
+	_, err := io.WriteString(w, metric)
+
+	if err != nil {
+		return fmt.Errorf("buf write string: %w", err)
+	}
+
+	return nil
+}
+
+func (tm *TrapMetrics) jsonMetrics() (bytes.Buffer, error) {
+	var buf bytes.Buffer
+	buf.Grow(int(tm.bufferSize))
+	if err := tm.writeJSONMetrics(&buf); err != nil {
+		buf.Reset()
+		return buf, fmt.Errorf("writing metrics: %w", err)
+	}
+
+	if buf.Len() <= 1 {
+		buf.Reset()
+		return buf, fmt.Errorf("no valid metrics found")
+	}
+
+	return buf, nil
 }
