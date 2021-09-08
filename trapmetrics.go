@@ -6,11 +6,12 @@
 package trapmetrics
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
@@ -23,7 +24,7 @@ const (
 
 // Trap defines the interface for for submitting metrics.
 type Trap interface {
-	SendMetrics(ctx context.Context, metrics *strings.Builder) (*trapcheck.TrapResult, error)
+	SendMetrics(ctx context.Context, metrics bytes.Buffer) (*trapcheck.TrapResult, error)
 }
 
 type Config struct {
@@ -75,11 +76,18 @@ func New(cfg *Config) (*TrapMetrics, error) {
 // when handling submission of metrics externally (e.g. aggregating multiple sets
 // of metrics from different trapmetrics containers).
 func (tm *TrapMetrics) JSONMetrics() ([]byte, error) {
-	m, err := tm.jsonMetrics()
+	buf, err := tm.jsonMetrics()
 	if err != nil {
 		return []byte{}, err
 	}
-	return []byte(m.String()), nil
+	return buf.Bytes(), nil
+}
+
+// WriteJSONMetrics writes current metrics to provided buffers in JSON format or an error - to be used
+// when handling submission of metrics externally (e.g. aggregating multiple sets
+// of metrics from different trapmetrics containers).
+func (tm *TrapMetrics) WriteJSONMetrics(w io.Writer) error {
+	return tm.writeJSONMetrics(w)
 }
 
 type Result struct {
@@ -101,19 +109,38 @@ func (tm *TrapMetrics) Flush(ctx context.Context) (*Result, error) {
 		return nil, fmt.Errorf("no trap check configured")
 	}
 
+	var buf bytes.Buffer
+
+	return tm.FlushWithBuffer(ctx, buf)
+}
+
+// FlushRawJSON sends JSON (in httptrap format) data to the broker.
+func (tm *TrapMetrics) FlushRawJSON(ctx context.Context, data []byte) (*Result, error) {
+	buf := bytes.NewBuffer(data)
+	return tm.FlushWithBuffer(ctx, *buf)
+}
+
+// FlushWithBuffer sends metrics to the configured trap check, returns result or an error.
+func (tm *TrapMetrics) FlushWithBuffer(ctx context.Context, buf bytes.Buffer) (*Result, error) {
+	if tm.trap == nil {
+		return nil, fmt.Errorf("no trap check configured")
+	}
+
 	start := time.Now()
-	data, err := tm.jsonMetrics()
-	if err != nil {
+
+	if err := tm.writeJSONMetrics(&buf); err != nil {
 		return nil, fmt.Errorf("packaging metrics for submission: %w", err)
 	}
-	if data == nil || data.Len() == 0 {
+
+	if buf.Len() == 0 {
 		return &Result{Error: "no metrics to send"}, nil
 	}
+
 	result := &Result{
 		EncodeDuration: time.Since(start),
 	}
 
-	smResult, err := tm.trap.SendMetrics(ctx, data)
+	smResult, err := tm.trap.SendMetrics(ctx, buf)
 	if err != nil {
 		return nil, fmt.Errorf("submitting metrics to broker: %w", err)
 	}
