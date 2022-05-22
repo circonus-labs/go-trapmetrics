@@ -221,7 +221,10 @@ func writeMetric(w io.Writer, first *bool, metricName, metricType string, val in
 
 	if metricType == "s" {
 		// NOTE: escape embedded quotes and add the string quotes
-		value = fmt.Sprintf(`"%v"`, strings.ReplaceAll(val.(string), `"`, `\"`))
+		escapedValue := strings.ReplaceAll(val.(string), `"`, `\"`)
+		escapedValue = strings.ReplaceAll(escapedValue, `“`, `\"`)
+		escapedValue = strings.ReplaceAll(escapedValue, `”`, `\"`)
+		value = fmt.Sprintf(`"%v"`, escapedValue)
 	}
 
 	if metricType == "h" || metricType == "H" {
