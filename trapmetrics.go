@@ -35,26 +35,36 @@ type Config struct {
 	// Logger instance of something satisfying Logger interface (default: log.Logger with ioutil.Discard)
 	Logger Logger
 
+	// NonPrintCharReplace replacement for non-printable characters
+	NonPrintCharReplace string
+
 	// GlobalTags is a list of tags to be added to every metric
 	GlobalTags Tags
 
 	// BufferSize size of metric buffer (when flushing), default is defaultBufferSize above
 	BufferSize uint
 }
-type TrapMetrics struct {
-	trap       Trap
-	metrics    Metrics
-	Log        Logger
-	globalTags Tags
-	metricsmu  sync.Mutex
-	bufferSize uint
+
+type TrapMetrics struct { //nolint:govet
+	metricsmu           sync.Mutex
+	trap                Trap
+	Log                 Logger
+	metrics             Metrics
+	globalTags          Tags
+	bufferSize          uint
+	nonPrintCharReplace rune
 }
 
 func New(cfg *Config) (*TrapMetrics, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("invalid config (nil)")
+	}
+
 	tm := &TrapMetrics{
-		trap:       cfg.Trap,
-		metrics:    make(Metrics),
-		globalTags: cfg.GlobalTags,
+		trap:                cfg.Trap,
+		metrics:             make(Metrics),
+		globalTags:          cfg.GlobalTags,
+		nonPrintCharReplace: rune('_'),
 	}
 
 	if cfg.Logger != nil {
@@ -65,8 +75,13 @@ func New(cfg *Config) (*TrapMetrics, error) {
 			Debug: false,
 		}
 	}
+
 	if cfg.BufferSize == 0 {
 		tm.bufferSize = defaultBufferSize
+	}
+
+	if cfg.NonPrintCharReplace != "" && len(cfg.NonPrintCharReplace) > 0 {
+		tm.nonPrintCharReplace = rune(cfg.NonPrintCharReplace[0])
 	}
 
 	return tm, nil
