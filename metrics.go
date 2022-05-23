@@ -48,6 +48,13 @@ const (
 	maxMetricNameLen = 4096 // sync w/MAX_METRIC_TAGGED_NAME https://github.com/circonus-labs/reconnoiter/blob/master/src/noit_metric.h#L40
 )
 
+var quoteReplacer = strings.NewReplacer(
+	`“`, `"`, // smart left double
+	`”`, `"`, // smart right double
+	`‘`, `'`, // smart left single
+	`’`, `'`, // smart right single
+)
+
 type Samples map[uint64]interface{}
 
 type Metrics map[uint64]*Metric
@@ -117,44 +124,6 @@ func generateSampleKey(ts *time.Time) uint64 {
 	return uint64(ts.UTC().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond)))
 }
 
-// func addMetricToBuffer(buf *bytes.Buffer, first *bool, metricName, metricType string, val interface{}, ts uint64) error {
-// 	value := val
-
-// 	if metricType == "s" {
-// 		// NOTE: escape embedded quotes and add the string quotes
-// 		value = fmt.Sprintf(`"%v"`, strings.ReplaceAll(val.(string), `"`, `\"`))
-// 	}
-
-// 	if metricType == "h" || metricType == "H" {
-// 		// NOTE: need to add the string quotes
-// 		value = fmt.Sprintf(`"%v"`, val)
-// 	}
-
-// 	// fastest way to get through this
-// 	// otherwise manipulating a larger
-// 	// after to truncate the last comma
-// 	// can take several milliseconds...
-// 	comma := ","
-// 	if *first {
-// 		comma = ""
-// 		*first = false
-// 	}
-
-// 	_, err := buf.WriteString(fmt.Sprintf(
-// 		`%s%q:{"_type":"%s","_ts":%d,"_value":%v}`,
-// 		comma,
-// 		metricName,
-// 		metricType,
-// 		ts,
-// 		value))
-
-// 	if err != nil {
-// 		return fmt.Errorf("buf write string: %w", err)
-// 	}
-
-// 	return nil
-// }
-
 func (tm *TrapMetrics) writeJSONMetrics(w io.Writer) error {
 	tm.metricsmu.Lock()
 	if len(tm.metrics) == 0 {
@@ -197,9 +166,11 @@ func (tm *TrapMetrics) writeJSONMetrics(w io.Writer) error {
 				_ = writeMetric(w, &first, metricName, brokerType, m.Samples[0], sampleKey)
 			} else {
 				hb.Reset()
-				if err := m.Samples[0].(*circonusllhist.Histogram).SerializeB64(&hb); err != nil {
-					tm.Log.Warnf("serializing histogram (%s %s): %s", m.Name, m.Tags, err)
-					continue
+				if s, ok := m.Samples[0].(*circonusllhist.Histogram); ok {
+					if err := s.SerializeB64(&hb); err != nil {
+						tm.Log.Warnf("serializing histogram (%s %s): %s", m.Name, m.Tags, err)
+						continue
+					}
 				}
 				_ = writeMetric(w, &first, metricName, brokerType, hb.String(), sampleKey)
 			}
@@ -220,18 +191,20 @@ func writeMetric(w io.Writer, first *bool, metricName, metricType string, val in
 	value := val
 
 	if metricType == "s" {
-		// NOTE: escape embedded quotes and add the string quotes
-		value = fmt.Sprintf(`"%v"`, strings.ReplaceAll(val.(string), `"`, `\"`))
+		if s, ok := val.(string); ok {
+			// NOTE: convert any 'smart' quotes, escape any embedded quotes, and add string quotes
+			value = fmt.Sprintf("%q", quoteReplacer.Replace(s))
+		}
 	}
 
 	if metricType == "h" || metricType == "H" {
 		// NOTE: need to add the string quotes
-		value = fmt.Sprintf(`"%v"`, val)
+		value = fmt.Sprintf("%q", val)
 	}
 
 	// fastest way to get through this
-	// otherwise manipulating a larger
-	// after to truncate the last comma
+	// otherwise manipulating after
+	// to truncate the last comma
 	// can take several milliseconds...
 	comma := ","
 	if *first {
