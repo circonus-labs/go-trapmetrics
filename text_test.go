@@ -34,6 +34,45 @@ func TestTrapMetrics_TextSet(t *testing.T) {
 			wantErr:  false,
 		},
 		{
+			name:        "valid w/leading spaces",
+			metricName:  "test",
+			metricValue: "  test",
+			metricTags: Tags{
+				Tag{
+					Category: "foo",
+					Value:    "bar",
+				},
+			},
+			wantJSON: `"_value":"test"`,
+			wantErr:  false,
+		},
+		{
+			name:        "valid w/trailing spaces",
+			metricName:  "test",
+			metricValue: "test  ",
+			metricTags: Tags{
+				Tag{
+					Category: "foo",
+					Value:    "bar",
+				},
+			},
+			wantJSON: `"_value":"test"`,
+			wantErr:  false,
+		},
+		{
+			name:        "valid w/non-printable char",
+			metricName:  "test",
+			metricValue: "test\x07",
+			metricTags: Tags{
+				Tag{
+					Category: "foo",
+					Value:    "bar",
+				},
+			},
+			wantJSON: `"_value":"test_"`,
+			wantErr:  false,
+		},
+		{
 			name:        "valid w/embedded double quotes",
 			metricName:  "test",
 			metricValue: `test "test"`,
@@ -105,7 +144,7 @@ func TestTrapMetrics_TextSet(t *testing.T) {
 				t.Errorf("TrapMetrics.TextFetch() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			want := tt.metricValue
+			want := tm.cleanTextValue(tt.metricValue)
 			sk := generateSampleKey(&ts)
 			if val, ok := m.Samples[sk]; ok {
 				if val != want {
