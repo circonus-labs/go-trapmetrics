@@ -1,3 +1,16 @@
+# v0.0.8
+
+* upd: go-trapcheck v0.0.8
+* add: additional text tests (leading/trailing spaces, non-printable char)
+* upd: generic text cleaner method
+* add: trim leading/trailing spaces from text metric values
+* add: replace non-printable chars in text metric values
+* add: replace 'smart' quotes (with regular quotes) in text metric values
+* add: escape any embedded quotes in text metric values
+* add: non-printable char replacement to config (default '_')
+* upd: check type assertions
+* add: more tests for each metric type
+
 # v0.0.7
 
 * upd: go-trapcheck v0.0.7
