@@ -68,7 +68,7 @@ func (tm *TrapMetrics) cleanTextValue(val string) string {
 	// remove leading and trailing spaces
 	clean := strings.TrimSpace(val)
 
-	// replace any non-printable characters with
+	// replace any non-printable characters with configured tm.nonPrintCharReplace
 	clean = strings.Map(func(r rune) rune {
 		if unicode.IsPrint(r) {
 			return r
