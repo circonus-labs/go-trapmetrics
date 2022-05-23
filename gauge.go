@@ -101,15 +101,35 @@ func (tm *TrapMetrics) GaugeAdd(name string, tags Tags, val interface{}, ts *tim
 func addValByType(rtype string, base interface{}, val interface{}) interface{} {
 	switch rtype {
 	case rtInt32:
-		return base.(int32) + val.(int32)
+		if i, oki := base.(int32); oki {
+			if j, okj := val.(int32); okj {
+				return i + j
+			}
+		}
 	case rtInt64:
-		return base.(int64) + val.(int64)
+		if i, oki := base.(int64); oki {
+			if j, okj := val.(int64); okj {
+				return i + j
+			}
+		}
 	case rtUint32:
-		return base.(uint32) + val.(uint32)
+		if i, oki := base.(uint32); oki {
+			if j, okj := val.(uint32); okj {
+				return i + j
+			}
+		}
 	case rtUint64:
-		return base.(uint64) + val.(uint64)
+		if i, oki := base.(uint64); oki {
+			if j, okj := val.(uint64); okj {
+				return i + j
+			}
+		}
 	case rtFloat64:
-		return base.(float64) + val.(float64)
+		if i, oki := base.(float64); oki {
+			if j, okj := val.(float64); okj {
+				return i + j
+			}
+		}
 	}
 
 	return base
