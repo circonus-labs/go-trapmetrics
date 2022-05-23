@@ -25,22 +25,13 @@ func (tm *TrapMetrics) TextSet(name string, tags Tags, val string, ts *time.Time
 	tm.metricsmu.Lock()
 	defer tm.metricsmu.Unlock()
 
-	// remove leading and trailing spaces
-	val = strings.TrimSpace(val)
-
-	// replace any non-printable characters with
-	val = strings.Map(func(r rune) rune {
-		if unicode.IsPrint(r) {
-			return r
-		}
-		return tm.nonPrintCharReplace
-	}, val)
+	value := tm.cleanTextValue(val)
 
 	if m, ok := tm.metrics[metricID]; ok {
 		if m.Mtype != mtText {
 			return fmt.Errorf("(%s %s) exists with different type (text) vs (%s)", name, tags.String(), m.Mtype)
 		}
-		m.Samples[sampleKey] = val
+		m.Samples[sampleKey] = value
 		return nil
 	}
 
@@ -49,7 +40,7 @@ func (tm *TrapMetrics) TextSet(name string, tags Tags, val string, ts *time.Time
 		return fmt.Errorf("(%s %s) failed to initialize (text): %w", name, tags.String(), err)
 	}
 	m.Rtype = rtString
-	m.Samples[sampleKey] = val
+	m.Samples[sampleKey] = value
 
 	tm.metrics[m.ID] = m
 
@@ -71,4 +62,19 @@ func (tm *TrapMetrics) TextFetch(name string, tags Tags) (*Metric, error) {
 	}
 
 	return nil, fmt.Errorf("text %d (%s %s) not found", metricID, name, tags.String())
+}
+
+func (tm *TrapMetrics) cleanTextValue(val string) string {
+	// remove leading and trailing spaces
+	clean := strings.TrimSpace(val)
+
+	// replace any non-printable characters with
+	clean = strings.Map(func(r rune) rune {
+		if unicode.IsPrint(r) {
+			return r
+		}
+		return tm.nonPrintCharReplace
+	}, clean)
+
+	return clean
 }
