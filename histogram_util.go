@@ -25,7 +25,9 @@ func (tm *TrapMetrics) setValue(name string, tags Tags, cumulative bool, val flo
 		return err
 	}
 
-	_ = m.Samples[0].(*circonusllhist.Histogram).RecordValue(val)
+	if s, ok := m.Samples[0].(*circonusllhist.Histogram); ok {
+		_ = s.RecordValue(val)
+	}
 
 	return nil
 }
@@ -39,7 +41,9 @@ func (tm *TrapMetrics) setDuration(name string, tags Tags, cumulative bool, val 
 		return err
 	}
 
-	_ = m.Samples[0].(*circonusllhist.Histogram).RecordDuration(val)
+	if s, ok := m.Samples[0].(*circonusllhist.Histogram); ok {
+		_ = s.RecordDuration(val)
+	}
 
 	return nil
 }
@@ -53,7 +57,9 @@ func (tm *TrapMetrics) setCountForValue(name string, tags Tags, cumulative bool,
 		return err
 	}
 
-	_ = m.Samples[0].(*circonusllhist.Histogram).RecordValues(val, count)
+	if s, ok := m.Samples[0].(*circonusllhist.Histogram); ok {
+		_ = s.RecordValues(val, count)
+	}
 
 	return nil
 }
