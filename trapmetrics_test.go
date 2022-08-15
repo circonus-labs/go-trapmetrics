@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/circonus-labs/go-apiclient"
 	"github.com/circonus-labs/go-trapcheck"
 )
 
@@ -19,6 +20,9 @@ type FakeTrap struct {
 
 func (ft FakeTrap) SendMetrics(ctx context.Context, metrics bytes.Buffer) (*trapcheck.TrapResult, error) {
 	fmt.Println(metrics)
+	return nil, nil
+}
+func (ft FakeTrap) UpdateCheckTags(ctx context.Context, tags []string) (*apiclient.CheckBundle, error) {
 	return nil, nil
 }
 
