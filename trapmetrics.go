@@ -3,6 +3,8 @@
 // license that can be found in the LICENSE file.
 //
 
+//go:build go1.17
+
 package trapmetrics
 
 import (
@@ -10,11 +12,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"sync"
 	"time"
 
+	"github.com/circonus-labs/go-apiclient"
 	"github.com/circonus-labs/go-trapcheck"
 )
 
@@ -25,6 +27,7 @@ const (
 // Trap defines the interface for for submitting metrics.
 type Trap interface {
 	SendMetrics(ctx context.Context, metrics bytes.Buffer) (*trapcheck.TrapResult, error)
+	UpdateCheckTags(ctx context.Context, tags []string) (*apiclient.CheckBundle, error)
 }
 
 type Config struct {
@@ -38,6 +41,9 @@ type Config struct {
 	// NonPrintCharReplace replacement for non-printable characters
 	NonPrintCharReplace string
 
+	// Trap ID (used for caching check bundle)
+	TrapID string
+
 	// GlobalTags is a list of tags to be added to every metric
 	GlobalTags Tags
 
@@ -49,7 +55,9 @@ type TrapMetrics struct { //nolint:govet
 	metricsmu           sync.Mutex
 	trap                Trap
 	Log                 Logger
+	checkTags           map[string]string
 	metrics             Metrics
+	trapID              string
 	globalTags          Tags
 	bufferSize          uint
 	nonPrintCharReplace rune
@@ -65,13 +73,14 @@ func New(cfg *Config) (*TrapMetrics, error) {
 		metrics:             make(Metrics),
 		globalTags:          cfg.GlobalTags,
 		nonPrintCharReplace: rune('_'),
+		checkTags:           make(map[string]string),
 	}
 
 	if cfg.Logger != nil {
 		tm.Log = cfg.Logger
 	} else {
 		tm.Log = &LogWrapper{
-			Log:   log.New(ioutil.Discard, "", log.LstdFlags),
+			Log:   log.New(io.Discard, "", log.LstdFlags),
 			Debug: false,
 		}
 	}
@@ -103,6 +112,10 @@ func (tm *TrapMetrics) JSONMetrics() ([]byte, error) {
 // of metrics from different trapmetrics containers).
 func (tm *TrapMetrics) WriteJSONMetrics(w io.Writer) error {
 	return tm.writeJSONMetrics(w)
+}
+
+func (tm *TrapMetrics) TrapID() string {
+	return tm.trapID
 }
 
 type Result struct {

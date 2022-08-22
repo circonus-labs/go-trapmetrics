@@ -1,3 +1,12 @@
+# v0.0.9
+
+* feat: add `UpdateCheckTags` method
+* feat: add `QueueCheckTag` method
+* feat(deps): bump go-apiclient from 0.7.15 to 0.7.18
+* feat(deps): bump go-trapcheck from 0.0.8 to 0.0.9
+* chore: update to go1.17
+* fix(lint): ioutil deprecation
+
 # v0.0.8
 
 * upd: go-trapcheck v0.0.8
