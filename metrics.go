@@ -190,16 +190,19 @@ func (tm *TrapMetrics) writeJSONMetrics(w io.Writer) error {
 func writeMetric(w io.Writer, first *bool, metricName, metricType string, val interface{}, ts uint64) error {
 	value := val
 
-	if metricType == "s" {
+	switch metricType {
+	case rtString:
 		if s, ok := val.(string); ok {
 			// NOTE: convert any 'smart' quotes, escape any embedded quotes, and add string quotes
 			value = fmt.Sprintf("%q", quoteReplacer.Replace(s))
 		}
-	}
-
-	if metricType == "h" || metricType == "H" {
+	case rtHistogram, rtCumulativeHistogram:
 		// NOTE: need to add the string quotes
 		value = fmt.Sprintf("%q", val)
+	case rtUint64, rtInt64:
+		value = fmt.Sprintf(`"%d"`, val)
+	case rtFloat64:
+		value = fmt.Sprintf(`"%f"`, val)
 	}
 
 	// fastest way to get through this
