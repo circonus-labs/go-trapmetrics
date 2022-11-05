@@ -1,3 +1,7 @@
+# v0.0.10
+
+* fix: send all 64bit numbers as bignum_as_string in json
+
 # v0.0.9
 
 * feat: add `UpdateCheckTags` method
