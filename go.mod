@@ -3,7 +3,7 @@ module github.com/circonus-labs/go-trapmetrics
 go 1.17
 
 require (
-	github.com/circonus-labs/go-apiclient v0.7.19
+	github.com/circonus-labs/go-apiclient v0.7.20
 	github.com/circonus-labs/go-trapcheck v0.0.9
 	github.com/openhistogram/circonusllhist v0.3.0
 )
