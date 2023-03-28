@@ -129,6 +129,7 @@ type Result struct {
 	EncodeDuration  time.Duration
 	FlushDuration   time.Duration
 	BytesSent       int
+	BytesSentGzip   int
 }
 
 // Flush sends metrics to the configured trap check, returns result or an error.
@@ -180,12 +181,13 @@ func (tm *TrapMetrics) FlushWithBuffer(ctx context.Context, buf bytes.Buffer) (*
 	result.Filtered = smResult.Filtered
 	result.SubmitDuration = smResult.SubmitDuration
 	result.LastReqDuration = smResult.LastReqDuration
+	result.BytesSentGzip = smResult.BytesSentGzip
 	result.BytesSent = smResult.BytesSent
 	result.FlushDuration = time.Since(start)
 
 	tm.Log.Debugf("flush -- C:%s, S:%s, E:%s, Stats:%d, Filtered:%d, Bytes:%d, Encode:%s, Submit:%s, LastReq:%s, Flush:%s",
 		result.CheckUUID, result.SubmitUUID, result.Error,
-		result.Stats, result.Filtered, result.BytesSent,
+		result.Stats, result.Filtered, result.BytesSentGzip,
 		result.EncodeDuration, result.SubmitDuration, result.LastReqDuration, result.FlushDuration)
 
 	return result, nil
