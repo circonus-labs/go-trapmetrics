@@ -1,3 +1,10 @@
+# v0.0.11
+
+# v0.0.11
+
+* feat: add BytesSentGzip stat
+* build(deps): update go-trapcheck from v0.0.9 to v0.0.10
+
 # v0.0.10
 
 * fix: send all 64bit numbers as bignum_as_string in json
