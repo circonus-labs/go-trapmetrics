@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/circonus-labs/go-apiclient v0.7.23
-	github.com/circonus-labs/go-trapcheck v0.0.10
+	github.com/circonus-labs/go-trapcheck v0.0.11
 	github.com/openhistogram/circonusllhist v0.3.0
 )
 

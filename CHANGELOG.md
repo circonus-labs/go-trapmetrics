@@ -1,4 +1,8 @@
-# v0.0.11
+# v0.0.12
+
+* build(deps): bump github.com/circonus-labs/go-trapcheck from 0.0.10 to 0.0.11
+* build(deps): bump github.com/circonus-labs/go-apiclient from 0.7.19 to 0.7.23
+* build(deps): bump golangci/golangci-lint-action from 3.3.0 to 3.4.0
 
 # v0.0.11
 
