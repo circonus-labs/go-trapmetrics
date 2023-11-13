@@ -51,8 +51,7 @@ type Config struct {
 	BufferSize uint
 }
 
-type TrapMetrics struct { //nolint:govet
-	metricsmu           sync.Mutex
+type TrapMetrics struct {
 	trap                Trap
 	Log                 Logger
 	checkTags           map[string]string
@@ -60,6 +59,7 @@ type TrapMetrics struct { //nolint:govet
 	trapID              string
 	globalTags          Tags
 	bufferSize          uint
+	metricsmu           sync.Mutex
 	nonPrintCharReplace rune
 }
 

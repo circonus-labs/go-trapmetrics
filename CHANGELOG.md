@@ -1,3 +1,9 @@
+# v0.0.13
+
+* fix(lint): unused args
+* chore(lint): struct alignment
+* build(deps): bump github.com/circonus-labs/go-trapcheck from 0.0.12 to 0.0.13
+
 # v0.0.12
 
 * build(deps): bump github.com/circonus-labs/go-trapcheck from 0.0.10 to 0.0.11

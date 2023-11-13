@@ -18,11 +18,11 @@ import (
 type FakeTrap struct {
 }
 
-func (ft FakeTrap) SendMetrics(ctx context.Context, metrics bytes.Buffer) (*trapcheck.TrapResult, error) {
+func (ft FakeTrap) SendMetrics(_ context.Context, metrics bytes.Buffer) (*trapcheck.TrapResult, error) {
 	fmt.Println(metrics)
 	return nil, nil
 }
-func (ft FakeTrap) UpdateCheckTags(ctx context.Context, tags []string) (*apiclient.CheckBundle, error) {
+func (ft FakeTrap) UpdateCheckTags(_ context.Context, _ []string) (*apiclient.CheckBundle, error) {
 	return nil, nil
 }
 
