@@ -6,6 +6,7 @@
 package trapmetrics
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -30,7 +31,7 @@ func TestTrapMetrics_GaugeSet(t *testing.T) {
 					Value:    "bar",
 				},
 			},
-			wantJSON: `"_value":1`,
+			wantJSON: `"_value":"1"`,
 			wantErr:  false,
 		},
 	}
@@ -107,7 +108,7 @@ func TestTrapMetrics_GaugeAdd(t *testing.T) {
 					Value:    "bar",
 				},
 			},
-			wantJSON:  `"_value":2`,
+			wantJSON:  `"_value":"2"`,
 			wantValue: int64(2),
 			wantErr:   false,
 		},
@@ -135,7 +136,7 @@ func TestTrapMetrics_GaugeAdd(t *testing.T) {
 					Value:    "bar",
 				},
 			},
-			wantJSON:  `"_value":2`,
+			wantJSON:  `"_value":"2"`,
 			wantValue: uint64(2),
 			wantErr:   false,
 		},
@@ -149,7 +150,7 @@ func TestTrapMetrics_GaugeAdd(t *testing.T) {
 					Value:    "bar",
 				},
 			},
-			wantJSON:  `"_value":2.4`,
+			wantJSON:  fmt.Sprintf(`"_value":"%f"`, float64(2.4)),
 			wantValue: float64(2.4),
 			wantErr:   false,
 		},

@@ -29,7 +29,7 @@ func TestTrapMetrics_CounterIncrement(t *testing.T) {
 					Value:    "bar",
 				},
 			},
-			wantJSON: `"_value":1`,
+			wantJSON: `"_value":"1"`,
 			wantErr:  false,
 		},
 	}
