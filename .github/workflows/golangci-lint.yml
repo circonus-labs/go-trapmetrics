@@ -1,5 +1,5 @@
 name: golangci-lint
-on:
+on: 
   push:
     tags: [ "v*" ]
     branches: [ master ]
@@ -11,14 +11,9 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v4
-        with:
-          stable: true
-          go-version: 1.17.x
       - uses: actions/checkout@v4
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3.7.0
         with:
-          version: v1.48
-          skip-go-installation: true
+          version: latest
           args: --timeout=5m
