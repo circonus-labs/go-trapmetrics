@@ -1,5 +1,13 @@
 # unreleased
 
+## v0.0.15
+
+* build(deps): bump github.com/openhistogram/circonusllhist from 0.3.0 to 0.4.0
+* build(deps): bump github.com/circonus-labs/go-trapcheck from 0.0.13 to 0.0.15
+* build(deps): bump github.com/circonus-labs/go-apiclient from 0.7.23 to 0.7.24
+* fix: tests to correctly reflect all 64bit numbers sent as strings for broker
+*
+
 ## v0.0.14
 
 * build: add goreleaser config
